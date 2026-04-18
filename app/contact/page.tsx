@@ -1,42 +1,76 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from "framer-motion";
+import { sendToGmail } from "@/lib/actions";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import emailjs from '@emailjs/browser';
 
-export const dynamic = 'force-dynamic';
+async function sendToGmail(formData: FormData) {
+  'use server';
+  import nodemailer from 'nodemailer'; // dynamic import if needed
+
+  const name = formData.get('name') as string;
+  const email = formData.get('email') as string;
+  const message = formData.get('message') as string;
+
+  const transporter = nodemailer.createTransporter({
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
+    auth: {
+      user: process.env.GMAIL_USER!,
+      pass: process.env.GMAIL_APP_PASSWORD!,
+    },
+  });
+
+  await transporter.sendMail({
+    from: process.env.GMAIL_USER!,
+    to: process.env.GMAIL_USER!,
+    subject: `New Contact Form: ${name}`,
+    text: `From: ${name} (${email})\\nMessage: ${message}`,
+  });
+
+  // Use redirect in server action
+  redirect('/contact?success=true');
+}
 
 export default function ContactPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const success = searchParams.get('success');
+  const [status, setStatus] = useState('');
+
+  if (success === 'true') {
+    setStatus('Message sent successfully!');
+  }
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     message: ''
   });
-  const [status, setStatus] = useState('');
-  const formRef = useRef(null);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setStatus('Sending...');
-
-    try {
-      await emailjs.send('service_74uo66s', 'template_2gaemoj', formData, 'UEqQ2KggeXN5AExUE');
-      setStatus('Message sent successfully!');
-      setFormData({ name: '', email: '', message: '' });
-    } catch (error) {
-      setStatus('Failed to send message. Please try again.');
-    }
-  };
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setStatus('Sending...');
+
+    try {
+      await sendToGmail(new FormData(e.currentTarget));
+    } catch (error) {
+      setStatus('Failed to send. Please try again.');
+    }
   };
 
   return (
@@ -53,7 +87,7 @@ export default function ContactPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <Input
                 name="name"
@@ -97,3 +131,4 @@ export default function ContactPage() {
     </motion.div>
   );
 }
+

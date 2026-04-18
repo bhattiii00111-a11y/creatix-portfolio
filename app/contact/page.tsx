@@ -6,11 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { emailjs } from '@emailjs/browser';
+import emailjs from '@emailjs/browser';
 
-emailjs.init('UEqQ2KggeXN5AExUE'); // Your public key
+export const dynamic = 'force-dynamic';
 
-export const dynamic = 'force-dynamic';\n\nexport default function ContactPage() {
+export default function ContactPage() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -24,7 +24,7 @@ export const dynamic = 'force-dynamic';\n\nexport default function ContactPage()
     setStatus('Sending...');
 
     try {
-      await emailjs.send('service_74uo66s', 'template_2gaemoj', formData);
+      await emailjs.send('service_74uo66s', 'template_2gaemoj', formData, 'UEqQ2KggeXN5AExUE');
       setStatus('Message sent successfully!');
       setFormData({ name: '', email: '', message: '' });
     } catch (error) {
